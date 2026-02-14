@@ -1,6 +1,39 @@
-import { createClient } from '@/lib/supabase-server';
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
 import { BookmarkService } from '@/lib/bookmark-service';
 import { NextRequest, NextResponse } from 'next/server';
+
+// Enable dynamic route
+export const dynamic = 'force-dynamic';
+
+/**
+ * Creates Supabase client for API routes
+ * Handles cookie-based session management
+ */
+async function createClient() {
+  const cookieStore = await cookies();
+  
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet: { name: string; value: string; options?: any }[]) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          } catch {
+            // Called from Server Component - ignore
+          }
+        },
+      },
+    }
+  );
+}
 
 /**
  * GET /api/bookmarks
@@ -9,7 +42,7 @@ import { NextRequest, NextResponse } from 'next/server';
  */
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -51,7 +84,7 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();

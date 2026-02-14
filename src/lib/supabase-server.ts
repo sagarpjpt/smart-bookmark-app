@@ -1,4 +1,4 @@
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
 /**
@@ -6,7 +6,27 @@ import { cookies } from 'next/headers';
  * Uses cookies for session management in server context
  * Required for any server-side data fetching or mutations
  */
-export const createClient = () => {
-  const cookieStore = cookies();
-  return createServerComponentClient({ cookies: () => cookieStore });
+export const createClient = async () => {
+  const cookieStore = await cookies();
+
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet: { name: string; value: string; options?: any }[]) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          } catch {
+            // Called from Server Component - ignore
+          }
+        },
+      },
+    }
+  );
 };
