@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase-server";
 import LoginButton from "@/components/LoginButton";
-import BookmarkList from "@/components/BookmarkList";
+import { BookmarksPage } from "@/features/bookmarks";
 
 /**
  * Main page component
@@ -21,5 +21,5 @@ export default async function Home() {
   }
 
   // Show bookmark manager if authenticated
-  return <BookmarkList />;
+  return <BookmarksPage />;
 }
